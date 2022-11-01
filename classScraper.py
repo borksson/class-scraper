@@ -13,31 +13,30 @@ USERNAME = os.environ['USERNAME']
 PASSWORD = os.environ['PASSWORD']
 CLASSDATA = os.environ['CLASSDATA']
 
-def scrapeClass(class_, driver):
-    if class_['type'] == 'learningsuite':
-        return scrapeClass_ls(class_, driver)
-    else:
-        print("Canvas")
+class Assignment:
+    def __init__(self, name, dueDate, submitted, score):
+        self.name = name
+        self.dueDate = dueDate
+        self.submitted = submitted
+        self.score = score
 
 # TODO: list has scaling buffer
 
-def scrapeClass_ls(class_, driver):
-    # TODO: Add canvas
-    class Assignment:
-        def __init__(self, name, dueDate, submitted, score):
-            self.name = name
-            self.dueDate = dueDate
-            self.submitted = submitted
-            self.score = score
-        
+def scrapeClass(class_, driver):
     print("Getting assignments for " + class_['name'])
     driver.get(class_["link"])
     if not loggedIn(driver):
         login(driver)
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, appData["elements"]["table"]["css"]))
-    )
-    table = pd.read_html(driver.page_source)[0]
+    if(class_['type'] == 'learningsuite'):
+        table = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, appData["elements"]["table_ls"]["css"]))
+        )
+    else:
+        table = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, appData["elements"]["table_c"]["css"]))
+        )
+    
+    table = pd.read_html(table.get_attribute('outerHTML'))[0]
     assignments = []
     print("Scanning column titles...")
     # Default column values
@@ -60,24 +59,38 @@ def scrapeClass_ls(class_, driver):
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["score"]):
                 print("Score:", table.columns[i], i)
                 scoreIndex = i
-            else:
-                print("No matching column for", table.columns[i])
+            # else:
+            #     print("No matching column for", table.columns[i])
     
     for row in table.iterrows():
         if not pd.isna(row[1][dueDateIndex]):
             if '-' in row[1][dueDateIndex]:
                 row[1][dueDateIndex] = row[1][dueDateIndex].split('-')[1].strip()
             name = row[1][nameIndex]
-            dueDate = datetime.strptime(row[1][dueDateIndex]+" 2022", "%b %d, %I:%M %p %Y")
+            if class_['type'] == 'learningsuite':
+                dueDate = datetime.strptime(row[1][dueDateIndex]+" 2022", "%b %d, %I:%M %p %Y")
+            else:
+                try:
+                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2022", "%b %d by %I:%M%p %Y")
+                except:
+                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2022", "%b %d by %I%p %Y")
             submit = row[1][submitIndex]
-            score = row[1][scoreIndex]
+            if class_['type'] == 'learningsuite':
+                score = row[1][scoreIndex]
+            else:
+                score = row[1][scoreIndex].split()
+                score = score[len(score)-1]
+                if score == 'grade':
+                    score = None
             # TODO: Make year dynamic
-            submitted = True
-            if (not pd.isna(submit)) and ('submit' == submit.lower()):
-                submitted = False
+            # TODO: Improve submission status
+            # submitted = False
+            # if pd.isna(submit) or 'submit' != submit.lower():
+            #     submitted = True
+            submitted = None
             assignment = Assignment(name, dueDate, submitted, score)
             assignments.append(assignment.__dict__)
-    return assignments    
+    return assignments
 
 def login(driver):
     print("Logging in...")
