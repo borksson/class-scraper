@@ -15,9 +15,11 @@ CLASSDATA = os.environ['CLASSDATA']
 
 def scrapeClass(class_, driver):
     if class_['type'] == 'learningsuite':
-        scrapeClass_ls(class_, driver)
+        return scrapeClass_ls(class_, driver)
     else:
         print("Canvas")
+
+# TODO: list has scaling buffer
 
 def scrapeClass_ls(class_, driver):
     # TODO: Add canvas
