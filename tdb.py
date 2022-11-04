@@ -2,7 +2,7 @@ import os
 import json
 from string import Template
 from datetime import datetime, timedelta
-
+# Local
 CLASSDATA = os.environ['CLASSDATA']
 
 with open(CLASSDATA, 'r') as f:
