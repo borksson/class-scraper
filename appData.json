@@ -15,6 +15,24 @@
         "submit": {
             "xpath": "/html/body/div/div/main/div/div/div[1]/div/div[4]/div/form/input[4]",
             "css": "#byuSignInButton"
+        },
+        "table_ls": {
+            "xpath": "/html/body/div[2]/div[2]/div/main/div[1]/div[2]/table",
+            "css": "#assignmentsTable"
+        },
+        "trust": {
+            "xpath": "/html/body/div/div/div[1]/div/div[2]/div[3]/button",
+            "css": "#trust-browser-button"
+        },
+        "table_c": {
+            "xpath": "/html/body/div[3]/div[2]/div[2]/div[3]/div[1]/div/div/div[3]/table",
+            "css": "#grades_summary"
         }
+    },
+    "columnKeywords": {
+        "name": ["name", "title"],
+        "dueDate": ["due", "date"],
+        "submissionStatus": ["submission"],
+        "score": ["score"]
     }
 }
