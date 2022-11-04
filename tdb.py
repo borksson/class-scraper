@@ -19,6 +19,7 @@ class Todo:
 # TODO: Call classScraper.py
 todo = []
 future = []
+# Branch 0.2.1
 
 for name, assignments in classData["assignments"].items():
     for assignment in assignments:
