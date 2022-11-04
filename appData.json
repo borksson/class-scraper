@@ -33,6 +33,8 @@
         "name": ["name", "title"],
         "dueDate": ["due", "date"],
         "submissionStatus": ["submission"],
-        "score": ["score"]
+        "submissionStatus_c": ["details"],
+        "score": ["score"],
+        "scored_c": ["complete", "%"]
     }
 }
