@@ -8,8 +8,10 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from datetime import datetime
+from deepdiff import DeepDiff
 
-USERNAME = os.environ['USERNAME']
+
+USERNAME = os.environ['USERNAME_BYU']
 PASSWORD = os.environ['PASSWORD']
 CLASSDATA = os.environ['CLASSDATA']
 
@@ -53,12 +55,15 @@ def scrapeClass(class_, driver):
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["dueDate"]):
                 print("DueDate:", table.columns[i], i)
                 dueDateIndex = i
-            elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["submissionStatus"]):
-                print("Submit:", table.columns[i], i)
-                submitIndex = i
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["score"]):
                 print("Score:", table.columns[i], i)
                 scoreIndex = i
+            elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["submissionStatus"]) and class_['type'] == 'learningsuite':
+                print("Submit:", table.columns[i], i)
+                submitIndex = i
+            elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["submissionStatus_c"]):
+                print("Submit:", table.columns[i], i)
+                submitIndex = i
             # else:
             #     print("No matching column for", table.columns[i])
     
@@ -83,12 +88,22 @@ def scrapeClass(class_, driver):
                 if score == 'grade':
                     score = None
             # TODO: Make year dynamic
-            # TODO: Improve submission status
-            # submitted = False
-            # if pd.isna(submit) or 'submit' != submit.lower():
-            #     submitted = True
             submitted = None
-            assignment = Assignment(name, dueDate, submitted, score)
+            if not pd.isna(submit):
+                # TODO: Add grade
+                if 'submission' in submit.lower():
+                    submitted = 'submitted'
+                elif 'submit' in submit.lower():
+                    submitted = 'not submitted'
+            if submitted is None:
+                if score is not None:
+                    if class_['type'] == 'canvas':
+                        submitted = 'submitted'
+                    else:
+                        temp = score.replace(' ', '').split('/')
+                        if len(temp)==2 and temp[0] != '':
+                            submitted = 'submitted'
+            assignment = Assignment(name, dueDate.strftime("%Y-%m-%d %H:%M:%S"), submitted, score)
             assignments.append(assignment.__dict__)
     return assignments
 
@@ -128,10 +143,13 @@ driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), opti
 
 print("Scrapping classes...")
 try:
-    classData["assignments"] = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
+    # TODO: Add hashing
+    newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
+    diff = DeepDiff(classData["assignments"], newData)
+
 except Exception as e:
     print(e)
-driver.close()
+    driver.close()
 
 # TODO: Compare to old record for changes
 
