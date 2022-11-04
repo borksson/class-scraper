@@ -4,7 +4,6 @@ from string import Template
 from datetime import datetime, timedelta
 # Local
 MAXTITLE = 30
-
 CLASSDATA = os.environ['CLASSDATA']
 
 with open(CLASSDATA, 'r') as f:
