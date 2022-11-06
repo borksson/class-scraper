@@ -8,7 +8,9 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from datetime import datetime
-from deepdiff import DeepDiff
+from deepdiff import DeepDiff, extract
+import hashlib
+import re
 
 
 USERNAME = os.environ['USERNAME_BYU']
@@ -21,6 +23,10 @@ class Assignment:
         self.dueDate = dueDate
         self.submitted = submitted
         self.score = score
+
+
+with open('appData.json', 'r') as f:
+    appData = json.load(f)
 
 # TODO: list has scaling buffer
 
@@ -39,7 +45,7 @@ def scrapeClass(class_, driver):
         )
     
     table = pd.read_html(table.get_attribute('outerHTML'))[0]
-    assignments = []
+    assignments = {}
     print("Scanning column titles...")
     # Default column values
     nameIndex = 1
@@ -50,19 +56,14 @@ def scrapeClass(class_, driver):
     for i in range(len(table.columns)):
         if "unnamed" not in table.columns[i].lower():
             if any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["name"]):
-                print("Name:", table.columns[i], i)
                 nameIndex = i
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["dueDate"]):
-                print("DueDate:", table.columns[i], i)
                 dueDateIndex = i
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["score"]):
-                print("Score:", table.columns[i], i)
                 scoreIndex = i
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["submissionStatus"]) and class_['type'] == 'learningsuite':
-                print("Submit:", table.columns[i], i)
                 submitIndex = i
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["submissionStatus_c"]):
-                print("Submit:", table.columns[i], i)
                 submitIndex = i
             # else:
             #     print("No matching column for", table.columns[i])
@@ -104,7 +105,7 @@ def scrapeClass(class_, driver):
                         if len(temp)==2 and temp[0] != '':
                             submitted = 'submitted'
             assignment = Assignment(name, dueDate.strftime("%Y-%m-%d %H:%M:%S"), submitted, score)
-            assignments.append(assignment.__dict__)
+            assignments[hashlib.sha1(bytes(name, 'utf-8')).hexdigest()] = assignment.__dict__
     return assignments
 
 def login(driver):
@@ -129,29 +130,33 @@ def loggedIn(driver):
     except:
         return True
 
+def main(classData):
+    if classData is None:
+        with open('classData.json', 'r') as f:
+            classData = json.load(f)
 
-with open('appData.json', 'r') as f:
-    appData = json.load(f)
+    options = webdriver.ChromeOptions()
+    options.add_argument('headless')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
-with open(CLASSDATA, 'r') as f:
-    classData = json.load(f)
-
-
-options = webdriver.ChromeOptions()
-options.add_argument('headless')
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
-print("Scrapping classes...")
-try:
-    # TODO: Add hashing
-    newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
-    diff = DeepDiff(classData["assignments"], newData)
-
-except Exception as e:
-    print(e)
+    print("Scrapping classes...")
+    try:
+        # TODO: Add hashing
+        newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
+        diff = DeepDiff(classData["assignments"], newData)
+        if diff != {}:
+            print("Changes detected!")
+            for key, change in diff['type_changes'].items():
+                if change['old_value'] == 'submitted':
+                    params = re.findall("\[\'[\w|\s]*\'\]", key)
+                    class_ = params[0][2:-2]
+                    id = params[1][2:-2]
+                    newData[class_][id]['submitted'] = 'submitted'
+        classData["assignments"] = newData
+    except Exception as e:
+        print(e)
+    
     driver.close()
 
-# TODO: Compare to old record for changes
-
-with open(CLASSDATA, 'w') as outfile:
-    json.dump(classData, outfile, default=str, indent=4)
+    with open(CLASSDATA, 'w') as outfile:
+        json.dump(classData, outfile, default=str, indent=4)
