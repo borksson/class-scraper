@@ -29,6 +29,8 @@ def createTodoList():
             if assignment["submitted"] is None or assignment["submitted"] == "not submitted":
                 dueDate = datetime.strptime(assignment['dueDate'], "%Y-%m-%d %H:%M:%S").date()
                 finishBy = dueDate - timedelta(days=classData['defaultBuffer'])
+                if finishBy.weekday() == 6:
+                    finishBy = finishBy - timedelta(days=1)
                 if finishBy <= datetime.now().date():
                     todo.append(Todo(assignment['name'], name, dueDate, finishBy, key).__dict__)
                 elif finishBy <= datetime.now().date() + timedelta(days=classData['defaultFuture']):
@@ -76,7 +78,6 @@ def updateClassData():
         if line.startswith("- [x]"):
             id = re.search('<!--.*-->', line).group(0)[4:-3]
             className = re.search('\(.*\)', line).group(0)[1:-1]
-            print(id, className)
             classData["assignments"][className][id]["submitted"] = "submitted"
     
     with open(CLASSDATA, 'w') as outfile:
@@ -84,13 +85,10 @@ def updateClassData():
 
 
 
-# TODO: Scan for changes to Todo.md and update the classData
 print("Scanning for changes to Todo.md and update the classData")
 updateClassData()
-# TODO: Call classScraper.py
 print("Calling classScraper.py")
 classScraper.main(classData)
-# TODO: Create the new Todo.md
 print("Creating the new Todo.md")
 createTodoList()
 
