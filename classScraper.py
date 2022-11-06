@@ -9,6 +9,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from datetime import datetime
 from deepdiff import DeepDiff
+import hashlib
 
 
 USERNAME = os.environ['USERNAME_BYU']
@@ -21,6 +22,10 @@ class Assignment:
         self.dueDate = dueDate
         self.submitted = submitted
         self.score = score
+
+
+with open('appData.json', 'r') as f:
+    appData = json.load(f)
 
 # TODO: list has scaling buffer
 
@@ -39,7 +44,7 @@ def scrapeClass(class_, driver):
         )
     
     table = pd.read_html(table.get_attribute('outerHTML'))[0]
-    assignments = []
+    assignments = {}
     print("Scanning column titles...")
     # Default column values
     nameIndex = 1
@@ -104,7 +109,7 @@ def scrapeClass(class_, driver):
                         if len(temp)==2 and temp[0] != '':
                             submitted = 'submitted'
             assignment = Assignment(name, dueDate.strftime("%Y-%m-%d %H:%M:%S"), submitted, score)
-            assignments.append(assignment.__dict__)
+            assignments[hashlib.sha1(bytes(name, 'utf-8')).hexdigest()] = assignment.__dict__
     return assignments
 
 def login(driver):
@@ -129,29 +134,31 @@ def loggedIn(driver):
     except:
         return True
 
+def main(classData):
+    if classData is None:
+        with open('classData.json', 'r') as f:
+            classData = json.load(f)
 
-with open('appData.json', 'r') as f:
-    appData = json.load(f)
+    options = webdriver.ChromeOptions()
+    options.add_argument('headless')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
-with open(CLASSDATA, 'r') as f:
-    classData = json.load(f)
+    print("Scrapping classes...")
+    try:
+        # TODO: Add hashing
+        newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
+        diff = DeepDiff(classData["assignments"], newData)
+        if diff != {}:
+            print("Changes detected!")
+            print(diff)
+            input("Press enter to continue...")
+        classData["assignments"] = newData
 
+    except Exception as e:
+        print(e)
+        driver.close()
 
-options = webdriver.ChromeOptions()
-options.add_argument('headless')
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    # TODO: Compare to old record for changes
 
-print("Scrapping classes...")
-try:
-    # TODO: Add hashing
-    newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
-    diff = DeepDiff(classData["assignments"], newData)
-
-except Exception as e:
-    print(e)
-    driver.close()
-
-# TODO: Compare to old record for changes
-
-with open(CLASSDATA, 'w') as outfile:
-    json.dump(classData, outfile, default=str, indent=4)
+    with open(CLASSDATA, 'w') as outfile:
+        json.dump(classData, outfile, default=str, indent=4)
