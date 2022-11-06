@@ -74,8 +74,9 @@ def updateClassData():
     
     for line in todo.splitlines():
         if line.startswith("- [x]"):
-            id = re.search('<!--\w*-->', line).group(0)[4:-3]
-            className = re.search('\((.*)\)', line).group(0)[1:-1]
+            id = re.search('<!--.*-->', line).group(0)[4:-3]
+            className = re.search('\(.*\)', line).group(0)[1:-1]
+            print(id, className)
             classData["assignments"][className][id]["submitted"] = "submitted"
     
     with open(CLASSDATA, 'w') as outfile:
@@ -84,8 +85,13 @@ def updateClassData():
 
 
 # TODO: Scan for changes to Todo.md and update the classData
-#updateClassData()
+print("Scanning for changes to Todo.md and update the classData")
+updateClassData()
 # TODO: Call classScraper.py
+print("Calling classScraper.py")
 classScraper.main(classData)
 # TODO: Create the new Todo.md
+print("Creating the new Todo.md")
 createTodoList()
+
+

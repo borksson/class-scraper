@@ -8,8 +8,9 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from datetime import datetime
-from deepdiff import DeepDiff
+from deepdiff import DeepDiff, extract
 import hashlib
+import re
 
 
 USERNAME = os.environ['USERNAME_BYU']
@@ -55,19 +56,14 @@ def scrapeClass(class_, driver):
     for i in range(len(table.columns)):
         if "unnamed" not in table.columns[i].lower():
             if any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["name"]):
-                print("Name:", table.columns[i], i)
                 nameIndex = i
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["dueDate"]):
-                print("DueDate:", table.columns[i], i)
                 dueDateIndex = i
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["score"]):
-                print("Score:", table.columns[i], i)
                 scoreIndex = i
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["submissionStatus"]) and class_['type'] == 'learningsuite':
-                print("Submit:", table.columns[i], i)
                 submitIndex = i
             elif any(sub in table.columns[i].lower() for sub in appData["columnKeywords"]["submissionStatus_c"]):
-                print("Submit:", table.columns[i], i)
                 submitIndex = i
             # else:
             #     print("No matching column for", table.columns[i])
@@ -150,15 +146,17 @@ def main(classData):
         diff = DeepDiff(classData["assignments"], newData)
         if diff != {}:
             print("Changes detected!")
-            print(diff)
-            input("Press enter to continue...")
+            for key, change in diff['type_changes'].items():
+                if change['old_value'] == 'submitted':
+                    params = re.findall("\[\'[\w|\s]*\'\]", key)
+                    class_ = params[0][2:-2]
+                    id = params[1][2:-2]
+                    newData[class_][id]['submitted'] = 'submitted'
         classData["assignments"] = newData
-
     except Exception as e:
         print(e)
-        driver.close()
-
-    # TODO: Compare to old record for changes
+    
+    driver.close()
 
     with open(CLASSDATA, 'w') as outfile:
         json.dump(classData, outfile, default=str, indent=4)
