@@ -84,10 +84,14 @@ def updateClassData():
         json.dump(classData, outfile, default=str, indent=4)
 
 
-
+# TODO: Add room reservations
+# TODO: Add user todos
+# TODO: Integrate with my phone
+# TODO: Make authenticated login
 print("Scanning for changes to Todo.md and update the classData")
 updateClassData()
 print("Calling classScraper.py")
+# TODO: Make class scraping run every few days
 classScraper.main(classData)
 print("Creating the new Todo.md")
 createTodoList()

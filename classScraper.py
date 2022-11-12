@@ -145,13 +145,16 @@ def main(classData):
         newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
         diff = DeepDiff(classData["assignments"], newData)
         if diff != {}:
-            print("Changes detected!")
             for key, change in diff['type_changes'].items():
                 if change['old_value'] == 'submitted':
                     params = re.findall("\[\'[\w|\s]*\'\]", key)
                     class_ = params[0][2:-2]
                     id = params[1][2:-2]
                     newData[class_][id]['submitted'] = 'submitted'
+            diff = {type_:changes for type_, changes in diff.items() if type_ != 'type_changes'}
+            if diff != {}:
+                print("Changes detected!")
+                print(diff)
         classData["assignments"] = newData
     except Exception as e:
         print(e)
