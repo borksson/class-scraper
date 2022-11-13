@@ -27,6 +27,42 @@
         "table_c": {
             "xpath": "/html/body/div[3]/div[2]/div[2]/div[3]/div[1]/div/div/div[3]/table",
             "css": "#grades_summary"
+        },
+        "subarea": {
+            "xpath": "/html/body/section/div/section/div[2]/form[2]/select[2]",
+            "css": "#subarea"
+        },
+        "go": {
+            "xpath": "/html/body/section/div/section/div[2]/form[2]/input[4]",
+            "css": "#Submit"
+        },
+        "grid": {
+            "xpath": "/html/body/section/div/section/div[2]/table",
+            "css": "#grid"
+        },
+        "rooms": {
+            "xpath": "/html/body/section/div/section/div[2]/table/tbody/tr[1]",
+            "css": "tbody > tr:nth-child(1)"
+        },
+        "times": {
+            "xpath": "/html/body/section/div/section/div[2]/table/tbody/*",
+            "css": "tbody"
+        },
+        "login": {
+            "xpath": "/html/body/section/div/section/nav/div/ul/li/a",
+            "css": "#subnav > div > ul > li > a"
+        },
+        "duration": {
+            "xpath": "/html/body/section/div/section/section/div[1]/form/fieldset/div[1]/select",
+            "css": "#duration"
+        },
+        "description": {
+            "xpath": "/html/body/section/div/section/section/div[1]/form/fieldset/div[2]/input",
+            "css": "#course"
+        },
+        "reserve": {
+            "xpath": "/html/body/section/div/section/section/div[1]/form/input[5]",
+            "css": "#frmReserve > input.button"
         }
     },
     "columnKeywords": {
