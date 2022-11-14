@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import re
 import classScraper
 import roomScheduler
+from login import login
 # Local
 MAXTITLE = 30
 
@@ -99,10 +100,12 @@ updateClassData()
 
 if datetime.now().date() >= (datetime.strptime(classData["lastUpdated"], "%Y-%m-%d %H:%M:%S.%f").date() + timedelta(days=classData["refreshInterval"])):
     # TODO: Create logged in driver
+    authDriver = login()
     print("Calling classScraper.py")
-    classScraper.main(classData)
+    classScraper.main(classData, authDriver)
     print("Calling room_scheduler.py")
-    roomScheduler.main()
+    roomScheduler.main(authDriver)
+    authDriver.close()
 
 print("Creating the new Daily Todo.md")
 createTodoList()

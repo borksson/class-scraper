@@ -1,4 +1,4 @@
-# Daily Todo - $date
+# $date
 
 ## Assignments
 $todoAssignments

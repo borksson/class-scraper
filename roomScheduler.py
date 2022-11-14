@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from login import login
 
 def getOptimalRooms(optimalSchedule, driver):
     print("Navigating to homepage...")
@@ -80,10 +81,13 @@ def getOptimalRooms(optimalSchedule, driver):
         
     return reserveRooms
 
-def reserveRooms_(reserveRooms, driver):
+def reserveRooms_(reserveRooms, driver, schedule):
     for room in reserveRooms:
         driver.get(room['link'])
         # Check is duration is 2 hours
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, appData["elements"]["duration"]["css"]))
+        )
         duration = Select(driver.find_element(By.CSS_SELECTOR, appData['elements']['duration']['css']))
         numOptions = len(duration.options)
         duration.select_by_index(numOptions - 1)
@@ -95,6 +99,7 @@ def reserveRooms_(reserveRooms, driver):
         reserveButton.click()
         schedule['currentSchedule'][room['roomDetails']['day']] = room
         print("Reserved room!")
+        return schedule
 
 # TODO: Replace with updated login function
 def login_mainpage(driver):
@@ -103,14 +108,7 @@ def login_mainpage(driver):
     print("Logging in...")
     loginButton = driver.find_element(By.CSS_SELECTOR, appData['elements']['login']['css'])
     loginButton.click()
-    username = driver.find_element(By.CSS_SELECTOR, appData['elements']['username']['css'])
-    username.send_keys(USERNAME)
-    password = driver.find_element(By.CSS_SELECTOR, appData['elements']['password']['css'])
-    password.send_keys(PASSWORD)
-    submitButton = driver.find_element(By.CSS_SELECTOR, appData['elements']['submit']['css'])
-    submitButton.click()
-    input("Press enter after duo...")
-    print("Logged in!")
+    driver = login(driver)
 
 def getReservedRooms():
     with open(SCHEDULE, 'r') as f:
@@ -132,7 +130,7 @@ if SCHEDULE == '':
 with open('appData.json', 'r') as f:
     appData = json.load(f)
 
-def main():
+def main(authDriver = None):
     with open(SCHEDULE, 'r') as f:
         schedule = json.load(f)
 
@@ -149,10 +147,12 @@ def main():
         if(len(reserveRooms) > 0):
             print("Reserving rooms...")
             driver.close()
-            driver = webdriver.Chrome(ChromeDriverManager().install())
-            login_mainpage(driver)
-            reserveRooms_(reserveRooms, driver)
-            driver.close()
+            if authDriver is None:
+                driver = webdriver.Chrome(ChromeDriverManager().install())
+                login_mainpage(driver)
+                authDriver = driver
+            authDriver.get("https://groupstudy.lib.byu.edu/")
+            schedule = reserveRooms_(reserveRooms, authDriver, schedule)
         else:
             print("No rooms available for reservation.")
     else:

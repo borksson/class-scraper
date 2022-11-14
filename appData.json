@@ -63,6 +63,10 @@
         "reserve": {
             "xpath": "/html/body/section/div/section/section/div[1]/form/input[5]",
             "css": "#frmReserve > input.button"
+        },
+        "home": {
+            "xpath": "/html/body/div[2]",
+            "css": "body > div.flex.flex-grow.relative"
         }
     },
     "columnKeywords": {
