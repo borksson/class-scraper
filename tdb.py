@@ -54,11 +54,13 @@ def createTodoList():
     todoStrings = ["- [ ] {title} ({description}) finish by **{finishBy}**, due {dueDate} <!--{hash}-->".format(**todoItem) for todoItem in todo]
     futureStrings = ["- [ ] {title} ({description}) finish by **{finishBy}**,  due {dueDate} <!--{hash}-->".format(**todoItem) for todoItem in future]
     reservedRoomsStrings = ["- Room number {roomNumber} with {numberOfSeats} seats, starting at {start}".format(**room) for room in roomScheduler.getReservedRooms()]
+    userTodoStrings = ["- [ ] "+todo for todo in classData['userTodo']]
     d = {
         'date': datetime.now().strftime("%m/%d/%Y"),
         'todoAssignments': "\n".join(todoStrings),
         'futureAssignments': "\n".join(futureStrings),
-        'reserved': "\n".join(reservedRoomsStrings)
+        'reserved': "\n".join(reservedRoomsStrings),
+        'userTodo': "\n".join(userTodoStrings)
     }
 
     with open('DailyTodo_TEMPLATE.md', 'r') as f:
@@ -75,12 +77,22 @@ def updateClassData():
     except FileNotFoundError:
         print("Todo.md not found")
         return
-    
+    userTodo = True
     for line in todo.splitlines():
+        # TODO: group sections with assignments and userTodo
+        if line == "## Assignments":
+            userTodo = False
+            continue
+        if line.startswith("- [ ]") and userTodo:
+            classData['userTodo'].append(line[6:])
         if line.startswith("- [x]"):
-            id = re.search('<!--.*-->', line).group(0)[4:-3]
-            className = re.search('\(.*\)', line).group(0)[1:-1]
-            classData["assignments"][className][id]["submitted"] = "submitted"
+            if userTodo:
+                print(line)
+                classData['userTodo'].remove(line[6:])
+            else:
+                id = re.search('<!--.*-->', line).group(0)[4:-3]
+                className = re.search('\(.*\)', line).group(0)[1:-1]
+                classData["assignments"][className][id]["submitted"] = "submitted"
     
     with open(CLASSDATA, 'w') as outfile:
         json.dump(classData, outfile, default=str, indent=4)
