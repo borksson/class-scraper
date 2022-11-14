@@ -4,6 +4,8 @@ from string import Template
 from datetime import datetime, timedelta
 import re
 import classScraper
+import roomScheduler
+from login import login
 # Local
 MAXTITLE = 30
 CLASSDATA = os.environ['CLASSDATA']
@@ -51,23 +53,24 @@ def createTodoList():
 
     todoStrings = ["- [ ] {title} ({description}) finish by **{finishBy}**, due {dueDate} <!--{hash}-->".format(**todoItem) for todoItem in todo]
     futureStrings = ["- [ ] {title} ({description}) finish by **{finishBy}**,  due {dueDate} <!--{hash}-->".format(**todoItem) for todoItem in future]
-
+    reservedRoomsStrings = ["- Room number {roomNumber} with {numberOfSeats} seats, starting at {start}".format(**room) for room in roomScheduler.getReservedRooms()]
     d = {
         'date': datetime.now().strftime("%m/%d/%Y"),
         'todoAssignments': "\n".join(todoStrings),
-        'futureAssignments': "\n".join(futureStrings)
+        'futureAssignments': "\n".join(futureStrings),
+        'reserved': "\n".join(reservedRoomsStrings)
     }
 
     with open('DailyTodo_TEMPLATE.md', 'r') as f:
         src = Template(f.read())
         result = src.substitute(d)
 
-    with open(classData['todoLocation']+'/Todo.md', 'w') as f:
+    with open(classData['todoLocation']+'/Daily Todo.md', 'w') as f:
         f.write(result)
 
 def updateClassData():
     try:
-        with open(classData['todoLocation']+'/Todo.md', 'r') as f:
+        with open(classData['todoLocation']+'/Daily Todo.md', 'r') as f:
             todo = f.read()
     except FileNotFoundError:
         print("Todo.md not found")
@@ -82,13 +85,30 @@ def updateClassData():
     with open(CLASSDATA, 'w') as outfile:
         json.dump(classData, outfile, default=str, indent=4)
 
+def updateTimestamp():
+    classData["lastUpdated"] = datetime.now()
+    with open(CLASSDATA, 'w') as outfile:
+        json.dump(classData, outfile, default=str, indent=4)
 
 
-print("Scanning for changes to Todo.md and update the classData")
+# TODO: Add user todos
+# TODO: Integrate with my phone
+# TODO: Make authenticated login
+print("Scanning for changes to Daily Todo.md and update the classData")
 updateClassData()
-print("Calling classScraper.py")
-classScraper.main(classData)
-print("Creating the new Todo.md")
+
+if datetime.now().date() >= (datetime.strptime(classData["lastUpdated"], "%Y-%m-%d %H:%M:%S.%f").date() + timedelta(days=classData["refreshInterval"])):
+    # TODO: Create logged in driver
+    authDriver = login()
+    print("Calling classScraper.py")
+    classScraper.main(classData, authDriver)
+    print("Calling room_scheduler.py")
+    roomScheduler.main(authDriver)
+    authDriver.close()
+
+print("Creating the new Daily Todo.md")
 createTodoList()
+print("Updating the timestamp")
+updateTimestamp()
 
 
