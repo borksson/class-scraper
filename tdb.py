@@ -83,7 +83,7 @@ def updateClassData():
         if line == "## Assignments":
             userTodo = False
             continue
-        if line.startswith("- [ ]") and userTodo:
+        if line.startswith("- [ ]") and userTodo and line[6:] not in classData['userTodo']:
             classData['userTodo'].append(line[6:])
         if line.startswith("- [x]"):
             if userTodo:
