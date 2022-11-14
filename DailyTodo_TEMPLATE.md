@@ -1,5 +1,8 @@
 # $date
 
+## User Todo
+$userTodo
+
 ## Assignments
 $todoAssignments
 
