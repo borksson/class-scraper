@@ -77,12 +77,22 @@ def updateClassData():
     except FileNotFoundError:
         print("Todo.md not found")
         return
-    
+    userTodo = True
     for line in todo.splitlines():
+        # TODO: group sections with assignments and userTodo
+        if line == "## Assignments":
+            userTodo = False
+            continue
+        if line.startswith("- [ ]") and userTodo:
+            classData['userTodo'].append(line[6:])
         if line.startswith("- [x]"):
-            id = re.search('<!--.*-->', line).group(0)[4:-3]
-            className = re.search('\(.*\)', line).group(0)[1:-1]
-            classData["assignments"][className][id]["submitted"] = "submitted"
+            if userTodo:
+                print(line)
+                classData['userTodo'].remove(line[6:])
+            else:
+                id = re.search('<!--.*-->', line).group(0)[4:-3]
+                className = re.search('\(.*\)', line).group(0)[1:-1]
+                classData["assignments"][className][id]["submitted"] = "submitted"
     
     with open(CLASSDATA, 'w') as outfile:
         json.dump(classData, outfile, default=str, indent=4)
