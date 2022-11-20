@@ -117,10 +117,10 @@ if datetime.now().date() >= (datetime.strptime(classData["lastUpdated"], "%Y-%m-
     print("Calling room_scheduler.py")
     roomScheduler.main(authDriver)
     authDriver.close()
+    print("Updating the timestamp")
+    updateTimestamp()
 
 print("Creating the new Daily Todo.md")
 createTodoList()
-print("Updating the timestamp")
-updateTimestamp()
 
 
