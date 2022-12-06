@@ -99,7 +99,7 @@ def reserveRooms_(reserveRooms, driver, schedule):
         reserveButton.click()
         schedule['currentSchedule'][room['roomDetails']['day']] = room
         print("Reserved room!")
-        return schedule
+    return schedule
 
 # TODO: Replace with updated login function
 def login_mainpage(driver):

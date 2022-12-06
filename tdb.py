@@ -91,6 +91,7 @@ def updateClassData():
                 classData['userTodo'].remove(line[6:])
             else:
                 id = re.search('<!--.*-->', line).group(0)[4:-3]
+                #TODO: Remove () from classTitle
                 className = re.search('\(.*\)', line).group(0)[1:-1]
                 classData["assignments"][className][id]["submitted"] = "submitted"
     
@@ -102,6 +103,7 @@ def updateTimestamp():
     with open(CLASSDATA, 'w') as outfile:
         json.dump(classData, outfile, default=str, indent=4)
 
+force = False
 
 # TODO: Add user todos
 # TODO: Integrate with my phone
@@ -109,7 +111,7 @@ def updateTimestamp():
 print("Scanning for changes to Daily Todo.md and update the classData")
 updateClassData()
 
-if datetime.now().date() >= (datetime.strptime(classData["lastUpdated"], "%Y-%m-%d %H:%M:%S.%f").date() + timedelta(days=classData["refreshInterval"])):
+if (datetime.now().date() >= (datetime.strptime(classData["lastUpdated"], "%Y-%m-%d %H:%M:%S.%f").date() + timedelta(days=classData["refreshInterval"]))) or force:
     # TODO: Create logged in driver
     authDriver = login()
     print("Calling classScraper.py")
@@ -124,3 +126,4 @@ print("Creating the new Daily Todo.md")
 createTodoList()
 
 
+#test
