@@ -75,18 +75,23 @@ def scrapeClass(class_, driver):
                 row[1][dueDateIndex] = row[1][dueDateIndex].split('-')[1].strip()
             name = row[1][nameIndex]
             if class_['type'] == 'learningsuite':
-                dueDate = datetime.strptime(row[1][dueDateIndex]+" 2022", "%b %d, %I:%M %p %Y")
+                dueDate = datetime.strptime(row[1][dueDateIndex]+" 2023", "%b %d, %I:%M %p %Y")
             else:
                 try:
-                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2022", "%b %d by %I:%M%p %Y")
+                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2023", "%b %d by %I:%M%p %Y")
                 except:
-                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2022", "%b %d by %I%p %Y")
+                    print("DUE DATE ERROR:")
+                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2023", "%b %d by %I%p %Y")
             submit = row[1][submitIndex]
             if class_['type'] == 'learningsuite':
                 score = row[1][scoreIndex]
             else:
-                score = row[1][scoreIndex].split()
-                score = score[len(score)-1]
+                score = row[1][scoreIndex]
+                score = score.split()
+                if '/' in score:
+                    score = score[len(score)-3]
+                else:
+                    score = score[len(score)-1]
                 if score == 'grade':
                     score = None
             # TODO: Make year dynamic
@@ -100,9 +105,12 @@ def scrapeClass(class_, driver):
             if submitted is None:
                 if score is not None:
                     if class_['type'] == 'canvas':
-                        submitted = 'submitted'
+                        if '-' == score:
+                            submitted = 'not submitted'
+                        else:
+                            submitted = 'submitted'
                     else:
-                        temp = score.replace(' ', '').split('/')
+                        temp = str(score).replace(' ', '').split('/')
                         if len(temp)==2 and temp[0] != '':
                             submitted = 'submitted'
             assignment = Assignment(name, dueDate.strftime("%Y-%m-%d %H:%M:%S"), submitted, score)
@@ -121,29 +129,32 @@ def main(classData, authDriver = None):
         driver = authDriver
 
     print("Scrapping classes...")
-    try:
-        # TODO: Add hashing
-        newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
-        diff = DeepDiff(classData["assignments"], newData)
-        if diff != {}:
+    #try:
+    # TODO: Add hashing
+    newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
+    diff = DeepDiff(classData["assignments"], newData)
+    if diff != {}:
+        if 'type_changes' in diff:
+            print('Type changes detected!')
             for key, change in diff['type_changes'].items():
                 if change['old_value'] == 'submitted':
                     params = re.findall("\[\'[\w|\s]*\'\]", key)
                     class_ = params[0][2:-2]
                     id = params[1][2:-2]
                     newData[class_][id]['submitted'] = 'submitted'
+        if 'values_changed' in diff:
             for key, change in diff['values_changed'].items():
                 if "score" in key:
                     print("Score updated!")
                 else:
                     print("Other change:", key, change)
-            diff = {type_:changes for type_, changes in diff.items() if type_ != 'type_changes' or type_ != 'values_changed'}
-            if diff != {}:
-                print("Changes detected!")
-                print(diff)
-        classData["assignments"] = newData
-    except Exception as e:
-        print(e)
+        #diff = {type_:changes for type_, changes in diff.items() if type_ != 'type_changes' or type_ != 'values_changed'}
+        if diff != {}:
+            print("Changes detected!")
+            print(diff)
+    classData["assignments"] = newData
+    # except Exception as e:
+    #     print("HERE:",e)
     
     if authDriver is None:
         driver.quit()

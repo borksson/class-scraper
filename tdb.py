@@ -116,14 +116,11 @@ if (datetime.now().date() >= (datetime.strptime(classData["lastUpdated"], "%Y-%m
     authDriver = login()
     print("Calling classScraper.py")
     classScraper.main(classData, authDriver)
-    print("Calling room_scheduler.py")
-    roomScheduler.main(authDriver)
+    #print("Calling room_scheduler.py")
+    #roomScheduler.main(authDriver)
     authDriver.close()
     print("Updating the timestamp")
     updateTimestamp()
 
 print("Creating the new Daily Todo.md")
 createTodoList()
-
-
-#test
