@@ -19,3 +19,12 @@ Use the `env_template.txt` file as an example.
 Run the automated scheduler
 
 `python roomScheduler.py`
+
+
+## Stuff I Want to Add
+- Accurate year
+- Change semester capabilities
+- Improve HTML table parsing
+- Fix the diff
+- Add custom assignments
+- Weighted assignments

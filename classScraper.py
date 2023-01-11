@@ -75,13 +75,19 @@ def scrapeClass(class_, driver):
                 row[1][dueDateIndex] = row[1][dueDateIndex].split('-')[1].strip()
             name = row[1][nameIndex]
             if class_['type'] == 'learningsuite':
-                dueDate = datetime.strptime(row[1][dueDateIndex]+" 2023", "%b %d, %I:%M %p %Y")
+                dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d, %I:%M %p")
+                dueDate.year = datetime.now().year
+                print(dueDate)
             else:
                 try:
-                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2023", "%b %d by %I:%M%p %Y")
+                    dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d by %I:%M%p")
+                    dueDate.year = datetime.now().year
+                    print(dueDate)
                 except:
                     print("DUE DATE ERROR:")
-                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2023", "%b %d by %I%p %Y")
+                    dueDate = datetime.strptime(row[1][dueDateIndex]+, "%b %d by %I%p")
+                    dueDate.year = datetime.now().year
+                    print(dueDate)
             submit = row[1][submitIndex]
             if class_['type'] == 'learningsuite':
                 score = row[1][scoreIndex]
