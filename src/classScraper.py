@@ -16,7 +16,6 @@ from login import login, loggedIn
 
 USERNAME = os.environ['USERNAME_BYU']
 PASSWORD = os.environ['PASSWORD']
-CLASSDATA = os.environ['CLASSDATA']
 
 class Assignment:
     def __init__(self, name, dueDate, submitted, score):
@@ -26,7 +25,7 @@ class Assignment:
         self.score = score
 
 
-with open('appData.json', 'r') as f:
+with open('../data/appData.json', 'r') as f:
     appData = json.load(f)
 
 # TODO: list has scaling buffer
@@ -76,17 +75,17 @@ def scrapeClass(class_, driver):
             name = row[1][nameIndex]
             if class_['type'] == 'learningsuite':
                 dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d, %I:%M %p")
-                dueDate.year = datetime.now().year
+                dueDate = dueDate.replace(year=datetime.now().year)
                 print(dueDate)
             else:
                 try:
                     dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d by %I:%M%p")
-                    dueDate.year = datetime.now().year
+                    dueDate = dueDate.replace(year=datetime.now().year)
                     print(dueDate)
                 except:
                     print("DUE DATE ERROR:")
-                    dueDate = datetime.strptime(row[1][dueDateIndex]+, "%b %d by %I%p")
-                    dueDate.year = datetime.now().year
+                    dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d by %I%p")
+                    dueDate = dueDate.replace(year=datetime.now().year)
                     print(dueDate)
             submit = row[1][submitIndex]
             if class_['type'] == 'learningsuite':
@@ -100,7 +99,6 @@ def scrapeClass(class_, driver):
                     score = score[len(score)-1]
                 if score == 'grade':
                     score = None
-            # TODO: Make year dynamic
             submitted = None
             if not pd.isna(submit):
                 # TODO: Add grade
@@ -124,9 +122,6 @@ def scrapeClass(class_, driver):
     return assignments
 
 def main(classData, authDriver = None):
-    if classData is None:
-        with open('classData.json', 'r') as f:
-            classData = json.load(f)
     if authDriver is None:
         options = webdriver.ChromeOptions()
         options.add_argument('headless')
@@ -135,8 +130,6 @@ def main(classData, authDriver = None):
         driver = authDriver
 
     print("Scrapping classes...")
-    #try:
-    # TODO: Add hashing
     newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
     diff = DeepDiff(classData["assignments"], newData)
     if diff != {}:
@@ -165,5 +158,4 @@ def main(classData, authDriver = None):
     if authDriver is None:
         driver.quit()
 
-    with open(CLASSDATA, 'w') as outfile:
-        json.dump(classData, outfile, default=str, indent=4)
+    return classData

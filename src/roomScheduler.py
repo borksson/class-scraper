@@ -127,7 +127,7 @@ SCHEDULE = os.environ['SCHEDULE']
 if SCHEDULE == '':
     raise Exception('No schedule provided')
 
-with open('appData.json', 'r') as f:
+with open('../data/appData.json', 'r') as f:
     appData = json.load(f)
 
 def main(authDriver = None):

@@ -22,7 +22,6 @@ Run the automated scheduler
 
 
 ## Stuff I Want to Add
-- Accurate year
 - Change semester capabilities
 - Improve HTML table parsing
 - Fix the diff

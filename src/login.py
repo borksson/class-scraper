@@ -11,7 +11,7 @@ import time
 USERNAME = os.environ['USERNAME_BYU']
 PASSWORD = os.environ['PASSWORD']
 
-with open('appData.json', 'r') as f:
+with open('../data/appData.json', 'r') as f:
     appData = json.load(f)
 
 def login(driver = None):
