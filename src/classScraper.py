@@ -8,7 +8,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from datetime import datetime
-from deepdiff import DeepDiff, extract
+from deepdiff import DeepDiff
 import hashlib
 import re
 from login import login, loggedIn
@@ -18,7 +18,7 @@ USERNAME = os.environ['USERNAME_BYU']
 PASSWORD = os.environ['PASSWORD']
 
 class Assignment:
-    def __init__(self, name, dueDate, submitted, score):
+    def __init__(self, name=None, dueDate=None, submitted=None, score=None):
         self.name = name
         self.dueDate = dueDate
         self.submitted = submitted
@@ -76,17 +76,14 @@ def scrapeClass(class_, driver):
             if class_['type'] == 'learningsuite':
                 dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d, %I:%M %p")
                 dueDate = dueDate.replace(year=datetime.now().year)
-                print(dueDate)
             else:
                 try:
                     dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d by %I:%M%p")
                     dueDate = dueDate.replace(year=datetime.now().year)
-                    print(dueDate)
                 except:
                     print("DUE DATE ERROR:")
                     dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d by %I%p")
                     dueDate = dueDate.replace(year=datetime.now().year)
-                    print(dueDate)
             submit = row[1][submitIndex]
             if class_['type'] == 'learningsuite':
                 score = row[1][scoreIndex]
@@ -147,6 +144,15 @@ def main(classData, authDriver = None):
                     print("Score updated!")
                 else:
                     print("Other change:", key, change)
+        if 'dictionary_item_removed' in diff:
+            print('Items remove detected!')
+            for change in diff['dictionary_item_removed']:
+                print(change)
+                params = re.findall("\[\'[\w|\s]*\'\]", change)
+                class_ = params[0][2:-2]
+                id = params[1][2:-2]
+                print(class_, id)
+                newData[class_][id] = classData["assignments"][class_][id]
         #diff = {type_:changes for type_, changes in diff.items() if type_ != 'type_changes' or type_ != 'values_changed'}
         if diff != {}:
             print("Changes detected!")

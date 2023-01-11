@@ -25,5 +25,4 @@ Run the automated scheduler
 - Change semester capabilities
 - Improve HTML table parsing
 - Fix the diff
-- Add custom assignments
 - Weighted assignments

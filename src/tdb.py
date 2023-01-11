@@ -9,8 +9,8 @@ from login import login
 # Local
 
 MAXTITLE = 30
-FORCE = False
-DEBUG = True
+FORCE = os.environ['FORCE'] if 'FORCE' in os.environ else False
+DEBUG = os.environ['DEBUG'] if 'DEBUG' in os.environ else False
 if DEBUG:
     print("DEBUG MODE ON")
     FORCE = True
@@ -128,8 +128,8 @@ if shouldUpdate():
         data = classScraper.main(classData, authDriver)
         print(data)
         json.dump(data, outfile, default=str, indent=4)
-    #print("Calling room_scheduler.py")
-    #roomScheduler.main(authDriver)
+    print("Calling room_scheduler.py")
+    roomScheduler.main(authDriver)
     authDriver.close()
     print("Updating the timestamp")
     updateTimestamp()
