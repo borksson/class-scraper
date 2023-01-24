@@ -164,6 +164,5 @@ def main(authDriver = None):
     else:
         print("All optimal schedule rooms are scheduled.")
 
-    input("Press Enter to save...")
     with open(SCHEDULE, 'w') as outfile:
         json.dump(schedule, outfile, indent=4)
