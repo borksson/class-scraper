@@ -8,7 +8,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from datetime import datetime
-from deepdiff import DeepDiff, extract
+from deepdiff import DeepDiff
 import hashlib
 import re
 from login import login, loggedIn
@@ -16,17 +16,16 @@ from login import login, loggedIn
 
 USERNAME = os.environ['USERNAME_BYU']
 PASSWORD = os.environ['PASSWORD']
-CLASSDATA = os.environ['CLASSDATA']
 
 class Assignment:
-    def __init__(self, name, dueDate, submitted, score):
+    def __init__(self, name=None, dueDate=None, submitted=None, score=None):
         self.name = name
         self.dueDate = dueDate
         self.submitted = submitted
         self.score = score
 
 
-with open('appData.json', 'r') as f:
+with open('../data/appData.json', 'r') as f:
     appData = json.load(f)
 
 # TODO: list has scaling buffer
@@ -75,13 +74,16 @@ def scrapeClass(class_, driver):
                 row[1][dueDateIndex] = row[1][dueDateIndex].split('-')[1].strip()
             name = row[1][nameIndex]
             if class_['type'] == 'learningsuite':
-                dueDate = datetime.strptime(row[1][dueDateIndex]+" 2023", "%b %d, %I:%M %p %Y")
+                dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d, %I:%M %p")
+                dueDate = dueDate.replace(year=datetime.now().year)
             else:
                 try:
-                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2023", "%b %d by %I:%M%p %Y")
+                    dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d by %I:%M%p")
+                    dueDate = dueDate.replace(year=datetime.now().year)
                 except:
                     print("DUE DATE ERROR:")
-                    dueDate = datetime.strptime(row[1][dueDateIndex]+" 2023", "%b %d by %I%p %Y")
+                    dueDate = datetime.strptime(row[1][dueDateIndex], "%b %d by %I%p")
+                    dueDate = dueDate.replace(year=datetime.now().year)
             submit = row[1][submitIndex]
             if class_['type'] == 'learningsuite':
                 score = row[1][scoreIndex]
@@ -94,7 +96,6 @@ def scrapeClass(class_, driver):
                     score = score[len(score)-1]
                 if score == 'grade':
                     score = None
-            # TODO: Make year dynamic
             submitted = None
             if not pd.isna(submit):
                 # TODO: Add grade
@@ -118,9 +119,6 @@ def scrapeClass(class_, driver):
     return assignments
 
 def main(classData, authDriver = None):
-    if classData is None:
-        with open('classData.json', 'r') as f:
-            classData = json.load(f)
     if authDriver is None:
         options = webdriver.ChromeOptions()
         options.add_argument('headless')
@@ -129,8 +127,6 @@ def main(classData, authDriver = None):
         driver = authDriver
 
     print("Scrapping classes...")
-    #try:
-    # TODO: Add hashing
     newData = {class_["name"]:scrapeClass(class_, driver) for class_ in classData["classLinks"]}
     diff = DeepDiff(classData["assignments"], newData)
     if diff != {}:
@@ -148,6 +144,15 @@ def main(classData, authDriver = None):
                     print("Score updated!")
                 else:
                     print("Other change:", key, change)
+        if 'dictionary_item_removed' in diff:
+            print('Items remove detected!')
+            for change in diff['dictionary_item_removed']:
+                print(change)
+                params = re.findall("\[\'[\w|\s]*\'\]", change)
+                class_ = params[0][2:-2]
+                id = params[1][2:-2]
+                print(class_, id)
+                newData[class_][id] = classData["assignments"][class_][id]
         #diff = {type_:changes for type_, changes in diff.items() if type_ != 'type_changes' or type_ != 'values_changed'}
         if diff != {}:
             print("Changes detected!")
@@ -159,5 +164,4 @@ def main(classData, authDriver = None):
     if authDriver is None:
         driver.quit()
 
-    with open(CLASSDATA, 'w') as outfile:
-        json.dump(classData, outfile, default=str, indent=4)
+    return classData

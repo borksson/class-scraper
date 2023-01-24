@@ -8,6 +8,20 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from login import login
 
+USERNAME = os.environ['USERNAME_BYU']
+PASSWORD = os.environ['PASSWORD']
+DEBUG = os.environ['DEBUG'] if 'DEBUG' in os.environ else False
+if DEBUG:
+    SCHEDULE = "../data/DEBUG_scheduleData.json"
+    print(SCHEDULE)
+else:
+    SCHEDULE = os.environ['SCHEDULE']
+    if SCHEDULE == '':
+        raise Exception('No schedule provided')
+
+with open('../data/appData.json', 'r') as f:
+    appData = json.load(f)
+
 def getOptimalRooms(optimalSchedule, driver):
     print("Navigating to homepage...")
     driver.get('https://groupstudy.lib.byu.edu/')
@@ -96,7 +110,8 @@ def reserveRooms_(reserveRooms, driver, schedule):
         description.send_keys("Reserved for group study")
         reserveButton = driver.find_element(By.CSS_SELECTOR, appData['elements']['reserve']['css'])
         input("FINISH CAPTCHA, then press Enter to continue...")
-        reserveButton.click()
+        if not DEBUG:
+            reserveButton.click()
         schedule['currentSchedule'][room['roomDetails']['day']] = room
         print("Reserved room!")
     return schedule
@@ -120,15 +135,6 @@ def getReservedRooms():
         if reservationDate.date() == datetime.now().date():
             rooms.append(reservation['roomDetails'])
     return rooms
-
-USERNAME = os.environ['USERNAME_BYU']
-PASSWORD = os.environ['PASSWORD']
-SCHEDULE = os.environ['SCHEDULE']
-if SCHEDULE == '':
-    raise Exception('No schedule provided')
-
-with open('appData.json', 'r') as f:
-    appData = json.load(f)
 
 def main(authDriver = None):
     with open(SCHEDULE, 'r') as f:
@@ -158,6 +164,5 @@ def main(authDriver = None):
     else:
         print("All optimal schedule rooms are scheduled.")
 
-    input("Press Enter to save...")
     with open(SCHEDULE, 'w') as outfile:
         json.dump(schedule, outfile, indent=4)
